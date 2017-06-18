@@ -11,14 +11,30 @@ const getAudioPlayingState = function (callback) {
     	if (err) {
         	return callback(err);
 	    }
-    	let state = '1';
+    	let state = 1;
 	    if (data.includes('closed')) {
-        	state = '0';
+        	state = 0;
 	    } 
         return callback (null, state);
 	});
 };
 
+const switchAmpPower = function (state, callback) {
+    try {
+		http.get('http://raspibox.fritz.box:1880/rcswitch?device=D&status=' + state.toString(), (res) => {
+			if (typeof(callback) !== 'undefined') {
+				return callback(null, res.statusCode);
+			}
+		})
+        .on('error', function(e) {
+			return callback(e);
+		});
+	} catch (e) {
+		return callback(e);
+	}
+};
+
+let audioPlaying = 0;
 const main = function () {
 	getAudioPlayingState( (err, state) => {
 		if (err) {
@@ -26,16 +42,22 @@ const main = function () {
 		}
 	    //console.log(state);
 
-		http.get(`http://raspibox.fritz.box:1880/rcswitch?device=D&status=${state}`, (response) => {
-       		var body = '';
-        	response.on('data', function(d) {
-    	        body += d;
-   	    	});
-    	    response.on('end', function() {
-       	    	console.log('response: ' + body);
-	        });
-   		});
+		if (audioPlaying !== state) {
+            if (state === 1) {
+				switchAmpPower(state, (err, res) => {
+					console.log(res);
+				});
+			} else {
+				setTimeout( () => {
+					switchAmpPower(state, (err, res) => {
+						console.log(res);
+					});
+				}, 10000);
+			}
+			audioPlaying = state;
+		}
 	});
 };
 
 setInterval(main, 2000);
+

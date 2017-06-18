@@ -1,7 +1,7 @@
 'use strict';
 
-const http = require('http');
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 
 const filePath = path.join('/proc', 'asound', 'card0', 'pcm0p', 'sub0', 'status');
@@ -34,30 +34,38 @@ const switchAmpPower = function (state, callback) {
 	}
 };
 
-let audioPlaying = 0;
+let audioPlaying = undefined; 
+let turnoffTimer = null;
 const main = function () {
 	getAudioPlayingState( (err, state) => {
 		if (err) {
 			return console.log(err);
 		}
-	    //console.log(state);
 
 		if (audioPlaying !== state) {
+			audioPlaying = state;
             if (state === 1) {
+                clearTimeout(turnoffTimer);
 				switchAmpPower(state, (err, res) => {
-					console.log(res);
+                    if (err) {
+						return console.log(err);
+					}
+					console.log('sucessfully turned on the amplifier');
 				});
 			} else {
-				setTimeout( () => {
+				turnoffTimer = setTimeout( () => {
 					switchAmpPower(state, (err, res) => {
-						console.log(res);
+						if (err) {
+							console.log(res);
+						}
+						console.log('sucessfully turned off the amplifier');
 					});
 				}, 10000);
 			}
-			audioPlaying = state;
 		}
 	});
 };
 
 setInterval(main, 2000);
+console.log('started amp-switch service');
 

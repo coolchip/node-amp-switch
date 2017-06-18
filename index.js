@@ -24,19 +24,14 @@ const main = function () {
 		if (err) {
 			return console.log(err);
 		}
-	    return console.log(state);
+	    //console.log(state);
 
-		http.get({
-   		    host: 'http://raspibox.fritz.box:1880',
-       		path: '/rcswitch?device=D&status=' + state.toString()
-	    }, function(response) {
-   		    // Continuously update stream with data
+		http.get(`http://raspibox.fritz.box:1880/rcswitch?device=D&status=${state}`, (response) => {
        		var body = '';
         	response.on('data', function(d) {
     	        body += d;
    	    	});
     	    response.on('end', function() {
-   	    	    // Data reception is done, do whatever with it!
        	    	console.log('response: ' + body);
 	        });
    		});
